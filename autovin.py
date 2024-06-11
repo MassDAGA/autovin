@@ -118,7 +118,7 @@ def confirm_vin(file_path):
         vins_checked.append(vin_data['VIN'][ind])
         
     for ind in vin_data.index:
-        if vin data['VEHICLE TYPE'][ind] == None or vin_data['VEHICLE TYPE'][ind] == 'Error':
+        if vin_data['VEHICLE TYPE'][ind] == None or vin_data['VEHICLE TYPE'][ind] == 'Error':
             if 'trailer' in vin_data['MODEL'][ind].lower():
                 vin_data['VEHICLE TYPE'][ind] = 'TRAILER'
             elif 'lift' in vin_data['MODEL'][ind].lower():
