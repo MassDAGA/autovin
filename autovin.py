@@ -206,5 +206,4 @@ def main():
                 with open(input_file_path, "wb") as f:
                     f.write(uploaded_file.getbuffer())
                 processed_file_path, can_file_path = confirm_vin(input_file_path)
-                st.session_state["processed_file_path"] = processed_file_path
-               
+                st.session_state["processed_file_path"]
