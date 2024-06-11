@@ -211,7 +211,6 @@ def main():
     load_css()
     add_header()
     st.title("VIN Decoder")
-    add_footer()
 
     uploaded_file = st.file_uploader("Choose an Excel or CSV file", type=["xls", "xlsx", "csv"])
 
@@ -221,17 +220,13 @@ def main():
 
     if uploaded_file is not None:
         with st.spinner('Processing...'):
-            try:
-                input_file_path = os.path.join("temp", uploaded_file.name)
-                with open(input_file_path, "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-                processed_file_path, can_file_path = confirm_vin(input_file_path)
-                st.session_state["processed_file_path"] = processed_file_path
-                st.session_state["can_file_path"] = can_file_path
-                st.success('File successfully processed!')
-            except Exception as e:
-                st.error(f"Error processing file: {e}")
-                print(f"Error processing file: {e}")  # Debugging print statement
+            input_file_path = uploaded_file.name
+            with open(input_file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            processed_file_path, can_file_path = confirm_vin(input_file_path)
+            st.session_state["processed_file_path"] = processed_file_path
+            st.session_state["can_file_path"] = can_file_path
+            st.success('File successfully processed!')
 
     if st.session_state["processed_file_path"] and st.session_state["can_file_path"]:
         with open(st.session_state["processed_file_path"], "rb") as f:
@@ -252,6 +247,8 @@ def main():
             file_name=os.path.basename(st.session_state["can_file_path"]),
             mime='text/csv'
         )
+
+    add_footer()
 
 if __name__ == "__main__":
     main()
