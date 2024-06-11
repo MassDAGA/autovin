@@ -169,7 +169,7 @@ def add_header():
     st.markdown(
         """
         <header>
-            <img src="assets/michelin.png" alt="michelin">
+            <img src="assets/michelin-logo.png">
             <h1>Michelin Connected Fleet</h1>
         </header>
         """,
