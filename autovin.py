@@ -16,7 +16,7 @@ def confirm_vin(file_path):
         raw_vin_data = pd.read_excel(file_path, 'Vehicle & Asset List', header=3) 
     else:
         raw_vin_data = pd.read_excel(file_path, header=3)
-    
+        
     for column in raw_vin_data.columns:
         if 'vehicle asset name' in column.lower():
             raw_vin_data.rename(columns={column: 'Vehicle Asset Name'}, inplace=True)
@@ -166,4 +166,46 @@ def add_header():
     st.markdown(
         """
         <header>
-           
+            <img src="assets/Michelin-logo.png" alt="Michelin Logo">
+            <h1>Welcome to My Streamlit App</h1>
+        </header>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Add the footer
+def add_footer():
+    st.markdown(
+        """
+        <footer>
+            <p>Powered by Michelin</p>
+        </footer>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Main function
+def main():
+    load_css()
+    add_header()
+    st.title("VIN Decoder")
+    
+    uploaded_file = st.file_uploader("Choose an Excel or CSV file", type=["xls", "xlsx", "csv"])
+
+    if "processed_file_path" not in st.session_state:
+        st.session_state["processed_file_path"] = None
+        st.session_state["can_file_path"] = None
+
+    if uploaded_file is not None:
+        with st.spinner('Processing...'):
+            input_file_path = uploaded_file.name
+            with open(input_file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            processed_file_path, can_file_path = confirm_vin(input_file_path)
+            st.session_state["processed_file_path"] = processed_file_path
+            st.session_state["can_file_path"] = can_file_path
+            st.success('File successfully processed!')
+
+    if st.session_state["processed_file_path"] and st.session_state["can_file_path"]:
+        with open(st.session_state["processed_file_path"], "rb") as f:
+            processed
