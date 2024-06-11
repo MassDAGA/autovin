@@ -13,7 +13,7 @@ header {
 }
 
 header img {
-    height: 50px;
+    max-height: 100px; /* Allow the image to resize up to 100px in height */
     margin-right: 20px;
 }
 
