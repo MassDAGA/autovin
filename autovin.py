@@ -192,6 +192,7 @@ def main():
     load_css()
     add_header()
     st.title("VIN Decoder")
+    add_footer()
 
     uploaded_file = st.file_uploader("Choose an Excel or CSV file", type=["xls", "xlsx", "csv"])
 
