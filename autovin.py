@@ -118,13 +118,13 @@ def confirm_vin(file_path):
         vins_checked.append(vin_data['VIN'][ind])
         
     for ind in vin_data.index:
-        if vin_data['VEHICLE TYPE'][ind] == None or vin_data['VEHICLE TYPE'][ind] == 'Error':
-                if 'trailer' in vin_data['MODEL'][ind].lower():
-                    vin_data['VEHICLE TYPE'][ind] = 'TRAILER'
-                elif 'lift' in vin_data['MODEL'][ind].lower():
-                    vin_data['VEHICLE TYPE'][ind] = 'LIFT'
-                elif vin_data['VEHICLE TYPE'][ind] == 'Error':
-                    vin_data['VEHICLE TYPE'][ind] = 'UNKNOWN'
+        if vin data['VEHICLE TYPE'][ind] == None or vin_data['VEHICLE TYPE'][ind] == 'Error':
+            if 'trailer' in vin_data['MODEL'][ind].lower():
+                vin_data['VEHICLE TYPE'][ind] = 'TRAILER'
+            elif 'lift' in vin_data['MODEL'][ind].lower():
+                vin_data['VEHICLE TYPE'][ind] = 'LIFT'
+            elif vin_data['VEHICLE TYPE'][ind] == 'Error':
+                vin_data['VEHICLE TYPE'][ind] = 'UNKNOWN'
 
     vin_data['MANUAL CHECK NEEDED'] = check_list
     vin_data = pd.concat([vin_data, results['ERROR CODE']], axis=1)
@@ -206,4 +206,32 @@ def main():
                 with open(input_file_path, "wb") as f:
                     f.write(uploaded_file.getbuffer())
                 processed_file_path, can_file_path = confirm_vin(input_file_path)
-                st.session_state["processed_file_path"]
+                st.session_state["processed_file_path"] = processed_file_path
+                st.session_state["can_file_path"] = can_file_path
+                st.success('File successfully processed!')
+            except Exception as e:
+                st.error(f"Error processing file: {e}")
+                print(f"Error processing file: {e}")  # Debugging print statement
+
+    if st.session_state["processed_file_path"] and st.session_state["can_file_path"]:
+        with open(st.session_state["processed_file_path"], "rb") as f:
+            processed_data = f.read()
+        with open(st.session_state["can_file_path"], "rb") as f:
+            can_data = f.read()
+        
+        st.download_button(
+            label="Download Processed File",
+            data=BytesIO(processed_data),
+            file_name=os.path.basename(st.session_state["processed_file_path"]),
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+        st.download_button(
+            label="Download CAN File",
+            data=BytesIO(can_data),
+            file_name=os.path.basename(st.session_state["can_file_path"]),
+            mime='text/csv'
+        )
+
+if __name__ == "__main__":
+    main()
