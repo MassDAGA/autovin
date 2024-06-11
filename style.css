@@ -13,8 +13,8 @@ header {
 }
 
 header img {
-    max-height: 100px; /* Allow the image to resize up to 100px in height */
-    margin-right: 20px;
+    max-height: 250px; /* Allow the image to resize up to 100px in height */
+    margin-right: 50px;
 }
 
 header h1 {
