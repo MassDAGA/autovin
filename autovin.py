@@ -170,7 +170,7 @@ def add_header():
         """
         <header>
             <img src="assets/Michelin-logo.png" alt="Michelin Logo">
-            <h1>Welcome to My Streamlit App</h1>
+            <h1>Michelin Connected Fleet</h1>
         </header>
         """,
         unsafe_allow_html=True
