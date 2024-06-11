@@ -16,7 +16,7 @@ def confirm_vin(file_path):
         raw_vin_data = pd.read_excel(file_path, 'Vehicle & Asset List', header=3) 
     else:
         raw_vin_data = pd.read_excel(file_path, header=3)
-        
+    
     for column in raw_vin_data.columns:
         if 'vehicle asset name' in column.lower():
             raw_vin_data.rename(columns={column: 'Vehicle Asset Name'}, inplace=True)
@@ -152,40 +152,18 @@ def confirm_vin(file_path):
         
     return processed_file_path, CAN_file_path
 
-st.title("VIN Decoder")
+# Load the CSS file
+def load_css():
+    css_file_path = "style.css"
+    if os.path.exists(css_file_path):
+        with open(css_file_path) as f:
+            st.markdown('<style>{}</style>'.format(f.read()), unsafe_allow_html=True)
+    else:
+        st.error("CSS file not found")
 
-uploaded_file = st.file_uploader("Choose an Excel or CSV file", type=["xls", "xlsx", "csv"])
-
-if "processed_file_path" not in st.session_state:
-    st.session_state["processed_file_path"] = None
-    st.session_state["can_file_path"] = None
-
-if uploaded_file is not None:
-    with st.spinner('Processing...'):
-        input_file_path = uploaded_file.name
-        with open(input_file_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        processed_file_path, can_file_path = confirm_vin(input_file_path)
-        st.session_state["processed_file_path"] = processed_file_path
-        st.session_state["can_file_path"] = can_file_path
-        st.success('File successfully processed!')
-
-if st.session_state["processed_file_path"] and st.session_state["can_file_path"]:
-    with open(st.session_state["processed_file_path"], "rb") as f:
-        processed_data = f.read()
-    with open(st.session_state["can_file_path"], "rb") as f:
-        can_data = f.read()
-    
-    st.download_button(
-        label="Download Processed File",
-        data=BytesIO(processed_data),
-        file_name=os.path.basename(st.session_state["processed_file_path"]),
-        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    
-    st.download_button(
-        label="Download CAN File",
-        data=BytesIO(can_data),
-        file_name=os.path.basename(st.session_state["can_file_path"]),
-        mime='text/csv'
-    )
+# Add the header with the logo
+def add_header():
+    st.markdown(
+        """
+        <header>
+           
