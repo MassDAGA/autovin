@@ -134,7 +134,7 @@ def confirm_vin(file_path):
         #if code times out, this error handling will make sure the code does not run indefinitely, if
         #encountered the code will stop processing VINs and communicate a time out error to the user
         except requests.exceptions.Timeout as e:
-            return "Request Timed Out"
+            return "Timed out"
             
     #create dataframe from list of dictionaries, each dictionary is a row within the 'results' dataframe
     results = pd.DataFrame(results)
@@ -322,13 +322,13 @@ st.markdown('''This application checks customer VINs with the [National Highway 
 
 **Input Document Requirements**
 
-- The uploaded document containing the VINs must follow the standard [Michelin Connected Fleet Deployment Template.](https://michelingroup.sharepoint.com/:x:/r/sites/ProcessImprovement/_layouts/15/Doc.aspx?sourcedoc=%7BFA264B31-B424-418C-8D1C-C0E5F001094E%7D&file=MCF%20Deployment%20Template.xlsx&action=default&mobileredirect=true&wdsle=0) This application cannot decipher different document formats. If an error is indicated with a file you upload, please check the uploaded document follows the formatting guidelines.
-- Make sure the input document is not open on your computer. If the input document is open a permission error will occur.
+- The uploaded document containing the VINs must follow the standard [Michelin Connected Fleet Deployment Template.](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EeVf3pMJk4RMoqM5R17La4UBkXCvYKbbhiTalXbr-RIU9g?e=gOMlOh) This application cannot decipher different document formats. If an error is indicated with a file you upload, please check the uploaded document follows the formatting guidelines.
+- Make sure the input document is not open on your computer. If the input document is open, a permission error will occur.
 - The VIN column must include the VINs the user wants to query. This is the only field necessary to confirm the existence/accuracy of the VINs.
 - The output documents will lack account information regarding the vehicle make, model, year, and fuel type if these input document columns are empty. 
 - If you are interested in retrieving additional vehicle information from VINs alone please use the [Automated VIN Data Application](https://vindata.streamlit.app/).
 
-***Example Input Document:*** [***VIN Example***](https://michelingroup.sharepoint.com/:x:/r/sites/ProcessImprovement/_layouts/15/Doc.aspx?sourcedoc=%7B58E5DF8A-9843-481F-A3E6-16A6B422D4EC%7D&file=VIN%20Example.xlsx&action=default&mobileredirect=true&wdsle=0)
+***Example Input Document:*** [***VIN Example***](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EQiKjKdXBXpFhLNWXL4IQc8BT4W1Y-J8EGZZ2ZegNpzkcA?e=VL1sLH)
 
 ***Note:*** If you are interested in checking the accuracy/existence of VINs recorded in a different format/document: download the MCF Deployment Template linked above, then copy and paste the VINs into the VIN column and upload this document for bulk processing.''')
 
@@ -337,7 +337,7 @@ st.markdown('''**Output File 1: CAN Compatibility Check**
 - VINs relating to trailers and lifts are considered irrelevant to the CAN compatibility check and are excluded from this document. 
 - This CSV will have the same name as the original document followed by _CAN. This file includes VRN, Year, Make, Model, VIN, and Fuel Type information from the original input file.
 
-***Example CAN Output Document:*** [***VIN Example_CAN***](https://michelingroup.sharepoint.com/:x:/r/sites/ProcessImprovement/_layouts/15/Doc.aspx?sourcedoc=%7BF10B0EAE-4CAF-4F19-9B61-BB1F62DEDFC0%7D&file=VIN%20Example_CAN.xlsx&action=default&mobileredirect=true&wdsle=0)
+***Example CAN Output Document:*** [***VIN Example_CAN***](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EacrWkHBryJNrWVnA9FilCQBwmIIHnSx5wraTDd4Whnm1g?e=RsNt07)
 ''')
 
 st.markdown('''**Output File 2: Processed VINs**
@@ -348,7 +348,7 @@ st.markdown('''**Output File 2: Processed VINs**
 - A manual check is necessary if the VIN was not written to the CAN compatibility file as a valid VIN and the VIN does not relate to a trailer or lift (could be a relevant vehicle). 
 - This file will have the same name as the original document followed by _processed. This file also includes VRN, Year, Make, Model, VIN and Fuel Type information from the original document. 
 
-***Example Processed Output Document:*** [***VIN Example_processed***](https://michelingroup.sharepoint.com/:x:/r/sites/ProcessImprovement/_layouts/15/Doc.aspx?sourcedoc=%7B56DE5CED-7E83-459B-9430-BF55C85CD22A%7D&file=VIN%20Example_processed.xlsx&action=default&mobileredirect=true&wdsle=0)
+***Example Processed Output Document:*** [***VIN Example_processed***](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EbmzK5YEc-FHjOp2Vt2pkygBEa97ga9S3c6o7Md6HKJXDQ?e=o5S2pP)
 
 If you are encountering issues with this application please contact the Service Excellence Team: MCFNAServiceExcellenceTeam@MichelinGroup.onmicrosoft.com
 ''')
