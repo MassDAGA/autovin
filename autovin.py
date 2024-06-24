@@ -341,6 +341,7 @@ st.markdown('''**Output File 2: Processed VINs**
 - An error code of 0 indicates there was no issue with the VIN. 
 - A manual check is indicated as unnecessary if the VIN was considered valid and written to the CAN compatibility document or the vehicle type is a trailer or lift (irrelevant vehicle). 
 - A manual check is necessary if the VIN was not written to the CAN compatibility file as a valid VIN and the VIN does not relate to a trailer or lift (could be a relevant vehicle). 
+- This file includes information vehicle year, make, and model information from both the original input document and the NHTSA database. Information from these two sources allows users to confirm the documented vehicle information matches the VIN. Note that if the NHTSA and document information does not match, this indicates an issue with the input document VIN information.
 - This file will have the same name as the original document followed by _processed. This file also includes VRN, Year, Make, Model, VIN and Fuel Type information from the original document. 
 
 ***Example Processed Output Document:*** [***VIN Example_processed***](https://michelingroup.sharepoint.com/:x:/r/sites/ProcessImprovement/_layouts/15/Doc.aspx?sourcedoc=%7B56DE5CED-7E83-459B-9430-BF55C85CD22A%7D&file=VIN%20Example_processed.xlsx&action=default&mobileredirect=true&wdsle=0)
