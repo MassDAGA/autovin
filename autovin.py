@@ -134,7 +134,7 @@ def confirm_vin(file_path):
         #if code times out, this error handling will make sure the code does not run indefinitely, if
         #encountered the code will stop processing VINs and communicate a time out error to the user
         except requests.exceptions.Timeout as e:
-            return "Timed out"
+            return "Request Timed Out"
             
     #create dataframe from list of dictionaries, each dictionary is a row within the 'results' dataframe
     results = pd.DataFrame(results)
@@ -323,7 +323,7 @@ st.markdown('''This application checks customer VINs with the [National Highway 
 **Input Document Requirements**
 
 - The uploaded document containing the VINs must follow the standard [Michelin Connected Fleet Deployment Template.](https://michelingroup.sharepoint.com/:x:/r/sites/ProcessImprovement/_layouts/15/Doc.aspx?sourcedoc=%7BFA264B31-B424-418C-8D1C-C0E5F001094E%7D&file=MCF%20Deployment%20Template.xlsx&action=default&mobileredirect=true&wdsle=0) This application cannot decipher different document formats. If an error is indicated with a file you upload, please check the uploaded document follows the formatting guidelines.
-- Make sure the input document is not open on your computer. If the input document is open, a permission error will occur.
+- Make sure the input document is not open on your computer. If the input document is open a permission error will occur.
 - The VIN column must include the VINs the user wants to query. This is the only field necessary to confirm the existence/accuracy of the VINs.
 - The output documents will lack account information regarding the vehicle make, model, year, and fuel type if these input document columns are empty. 
 - If you are interested in retrieving additional vehicle information from VINs alone please use the [Automated VIN Data Application](https://vindata.streamlit.app/).
