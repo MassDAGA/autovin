@@ -1,4 +1,4 @@
-#import necessary packages
+import necessary packages
 import streamlit as st
 import pandas as pd
 import requests
@@ -8,6 +8,7 @@ import numpy as np
 import json
 from datetime import datetime
 from io import BytesIO
+import json
 
 @st.cache_data
 def confirm_vin(file_path):
@@ -98,9 +99,12 @@ def confirm_vin(file_path):
 
                 'VRN': vin_data['VRN'][ind],
                 'VIN': value,
-                'YEAR': decoded_values.get('Model Year', 'N/A'),
-                'MAKE': decoded_values.get('Make', 'N/A'),
-                'MODEL': decoded_values.get('Model', 'N/A'),
+                'NHTSA YEAR': decoded_values.get('Model Year', 'N/A'),
+                'NHTSA MAKE': decoded_values.get('Make', 'N/A'),
+                'NHTSA MODEL': decoded_values.get('Model', 'N/A'),
+                'YEAR': vin_data['YEAR'][ind],
+                'MAKE': vin_data['MAKE'][ind],
+                'MODEL': vin_data['MODEL'][ind],
                 'FUEL': decoded_values.get('Fuel Type - Primary', 'N/A'),
                 'COUNTRY': 'US',
                 'VEHICLE TYPE': decoded_values.get('Vehicle Type', 'N/A'),
@@ -114,11 +118,14 @@ def confirm_vin(file_path):
             results.append({
                 'VRN': vin_data['VRN'][ind],
                 'VIN': value,
-                'YEAR': 'Error',
-                'MAKE': 'Error',
-                'MODEL': 'Error',
+                'NHTSA YEAR': 'Error',
+                'NHTSA MAKE': 'Error',
+                'NHTSA MODEL': 'Error',
+                'YEAR': vin_data['YEAR'][ind],
+                'MAKE': vin_data['MAKE'][ind],
+                'MODEL': vin_data['MODEL'][ind],
                 'FUEL': 'Error',
-                'COUNTRY': 'Error',
+                'COUNTRY': 'US',
                 'VEHICLE TYPE': 'Error',
                 'ERROR CODE': 'Error: No information found for input VIN'
             })
@@ -143,7 +150,7 @@ def confirm_vin(file_path):
     
     #remove VEHICLE TYPE and ERROR CODE column from valid_vins dataframe to ensure in correct format for 
     #CAN compatability
-    valid_vins.drop(['VEHICLE TYPE', 'ERROR CODE'], axis = 1, inplace = True)
+    valid_vins.drop(['NHTSA YEAR','NHTSA MAKE', 'NHTSA MODEL', 'VEHICLE TYPE', 'ERROR CODE'], axis = 1, inplace = True)
     
     #remove duplicate VINs from CAN compatability check document
     valid_vins.drop_duplicates(subset=['VIN'],inplace= True)
@@ -159,49 +166,49 @@ def confirm_vin(file_path):
     #checked
     valid_vin_list = valid_vins['VIN'].values.tolist()
     
-    #add vehicle type information to vin_data dataframe for employee reference, added to help with manual checks
-    vin_data = pd.concat([vin_data, results['VEHICLE TYPE']], axis = 1)
+    ##add vehicle type information to vin_data dataframe for employee reference, added to help with manual checks
+    ##vin_data = pd.concat([vin_data, results['VEHICLE TYPE']], axis = 1)
     
-    #determine if a manual check of a given vehicle vin is necessary
-    #iterate through vin_data dataframe by index
-    for ind in vin_data.index:
+    ##determine if a manual check of a given vehicle vin is necessary
+    ##iterate through results dataframe by index
+    for ind in results.index:
         #check if the VIN is already in CAN dataframe and not a duplicate, if true no manual check
-        if vin_data['VIN'][ind].replace(" ", "") in valid_vin_list and vin_data['VIN'][ind] not in vins_checked:
+        if results['VIN'][ind].replace(" ", "") in valid_vin_list and results['VIN'][ind] not in vins_checked:
             check_list.append('NO')
         #if the vehicle is a trailer no manual checl
-        elif vin_data['VEHICLE TYPE'][ind] == 'TRAILER':
+        elif results['VEHICLE TYPE'][ind] == 'TRAILER':
             check_list.append('NO')
-        elif 'trailer' in vin_data['MODEL'][ind].lower() or 'trailer' in vin_data['VRN'][ind].lower():
+        elif 'trailer' in results['MODEL'][ind].lower() or 'trailer' in results['VRN'][ind].lower():
             check_list.append('NO')
         #if vehicle is a lift, no manual check
-        elif 'lift' in vin_data['MODEL'][ind].lower() or 'lift' in vin_data['VRN'][ind].lower():
+        elif 'lift' in results['MODEL'][ind].lower() or 'lift' in results['VRN'][ind].lower():
             check_list.append('NO')
-        elif 'example' in vin_data['VIN'][ind].lower():
+        elif 'example' in results['VIN'][ind].lower():
             check_list.append('NO')
         #if VIN is duplicate manual check is necessary
-        elif vin_data['VIN'][ind] in vins_checked:
+        elif results['VIN'][ind] in vins_checked:
             check_list.append('YES: Duplicate Vin')
         #otherwise a manual check is necessary
         else:
             check_list.append('YES')
         #add VIN to vins_checked list
-        vins_checked.append(vin_data['VIN'][ind])
+        vins_checked.append(results['VIN'][ind])
         
     #update vehicle type to indicate the vehicle is a trailer, lift or type is unkown where necessary
-    for ind in vin_data.index:
-        if vin_data['VEHICLE TYPE'][ind] == None or vin_data['VEHICLE TYPE'][ind] == 'Error':
-                if 'trailer' in vin_data['MODEL'][ind].lower():
-                    vin_data['VEHICLE TYPE'][ind] ='TRAILER'
+    for ind in results.index:
+        if results['VEHICLE TYPE'][ind] == None or results['VEHICLE TYPE'][ind] == 'Error':
+                if 'trailer' in results['MODEL'][ind].lower():
+                    results['VEHICLE TYPE'][ind] ='TRAILER'
                 elif 'lift' in vin_data['MODEL'][ind].lower():
-                    vin_data['VEHICLE TYPE'][ind] = 'LIFT'
-                elif vin_data['VEHICLE TYPE'][ind] == 'Error':
-                    vin_data['VEHICLE TYPE'][ind] = 'UNKNOWN'
+                    results['VEHICLE TYPE'][ind] = 'LIFT'
+                elif results['VEHICLE TYPE'][ind] == 'Error':
+                    results['VEHICLE TYPE'][ind] = 'UNKNOWN'
 
-    #create vin_data column indicating that somone needs to manually check a vehicle's VIN info using check_list
-    vin_data['MANUAL CHECK NEEDED'] = check_list
+    #create results column indicating that somone needs to manually check a vehicle's VIN info using check_list
+    results.insert(len(results.columns) - 1, 'MANUAL CHECK NEEDED', check_list)
     
-    #add error code information to vin_data dataframe for employee reference
-    vin_data = pd.concat([vin_data, results['ERROR CODE']], axis = 1)
+    ##add error code information to vin_data dataframe for employee reference
+    ##vin_data = pd.concat([vin_data, results['ERROR CODE']], axis = 1)
     
     #valid_vins should be written to a CSV that is uploaded to SalesForce CAN compatability check, file path
     #should be the same as the input file with _CAN appended
@@ -217,7 +224,7 @@ def confirm_vin(file_path):
     with pd.ExcelWriter(processed_file_path, engine='openpyxl') as writer:
         
         #create an Excel sheet names 'Processed VINs' to hold the dataframe
-        vin_data.to_excel(writer, index=False, sheet_name='Processed VINs')
+        results.to_excel(writer, index=False, sheet_name='Processed VINs')
 
         #access Excel file and worksheet 
         workbook = writer.book
@@ -311,8 +318,10 @@ st.markdown('''This application checks customer VINs with the [National Highway 
 **Input Document Requirements**
 
 - The uploaded document containing the VINs must follow the standard [Michelin Connected Fleet Deployment Template.](https://michelingroup.sharepoint.com/:x:/r/sites/ProcessImprovement/_layouts/15/Doc.aspx?sourcedoc=%7BFA264B31-B424-418C-8D1C-C0E5F001094E%7D&file=MCF%20Deployment%20Template.xlsx&action=default&mobileredirect=true&wdsle=0) This application cannot decipher different document formats. If an error is indicated with a file you upload, please check the uploaded document follows the formatting guidelines.
+- Make sure the input document is not open on your computer. If the input document is open, a permission error will occur.
 - The VIN column must include the VINs the user wants to query. This is the only field necessary to confirm the existence/accuracy of the VINs.
-- The output documents will lack information regarding the vehicle make, model, year, and fuel type if these input document columns are empty. If you are interested in retrieving vehicle make, model, year, etc. information from VINs alone please use the [Automated VIN Data Application](https://vindata.streamlit.app/).
+- The output documents will lack account information regarding the vehicle make, model, year, and fuel type if these input document columns are empty. 
+- If you are interested in retrieving additional vehicle information from VINs alone please use the [Automated VIN Data Application](https://vindata.streamlit.app/).
 
 ***Example Input Document:*** [***VIN Example***](https://michelingroup.sharepoint.com/:x:/r/sites/ProcessImprovement/_layouts/15/Doc.aspx?sourcedoc=%7B58E5DF8A-9843-481F-A3E6-16A6B422D4EC%7D&file=VIN%20Example.xlsx&action=default&mobileredirect=true&wdsle=0)
 
@@ -336,5 +345,5 @@ st.markdown('''**Output File 2: Processed VINs**
 
 ***Example Processed Output Document:*** [***VIN Example_processed***](https://michelingroup.sharepoint.com/:x:/r/sites/ProcessImprovement/_layouts/15/Doc.aspx?sourcedoc=%7B56DE5CED-7E83-459B-9430-BF55C85CD22A%7D&file=VIN%20Example_processed.xlsx&action=default&mobileredirect=true&wdsle=0)
 
-If you are encountering issues with this application please contact the [Service Excellence Team.](MCFNAServiceExcellenceTeam@MichelinGroup.onmicrosoft.com)
+If you are encountering issues with this application please contact the Service Excellence Team: MCFNAServiceExcellenceTeam@MichelinGroup.onmicrosoft.com
 ''')
