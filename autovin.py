@@ -12,7 +12,6 @@ import json
 
 @st.cache_data
 def confirm_vin(file_path):
-    
     #some excel files have more than 1 sheet, we handle excel files with more than 1 sheet by telling the 
     #code to read the sheet named 'Vehicle & Asset List' as this is the standard naming convention
     #write the information from this sheet into dataframe named 'raw_vin_data'
@@ -144,15 +143,6 @@ def confirm_vin(file_path):
     #valid vehicles require an energy source
     valid_vins = results[~results.FUEL.isin(['Not Applicable', 'Error', None])]
     
-    # Convert the 'YEAR' column to numeric, forcing errors to NaN
-    results['YEAR'] = pd.to_numeric(results['YEAR'], errors='coerce')
-    current_year = datetime.now().year
-    
-    #exclude vehicles that are older than 30 years from valid_vins dataframe, these require manual check
-    #due to manufacturers repeating VINs
-    valid_vins = results[~results.FUEL.isin(['Not Applicable', 'Error', None]) 
-                         & (current_year - results['YEAR'] < 30)]
-    
     #remove VEHICLE TYPE and ERROR CODE column from valid_vins dataframe to ensure in correct format for 
     #CAN compatability
     valid_vins.drop(['NHTSA YEAR','NHTSA MAKE', 'NHTSA MODEL', 'VEHICLE TYPE', 'ERROR CODE'], axis = 1, inplace = True)
@@ -211,9 +201,6 @@ def confirm_vin(file_path):
 
     #create results column indicating that somone needs to manually check a vehicle's VIN info using check_list
     results.insert(len(results.columns) - 1, 'MANUAL CHECK NEEDED', check_list)
-    
-    ##add error code information to vin_data dataframe for employee reference
-    ##vin_data = pd.concat([vin_data, results['ERROR CODE']], axis = 1)
     
     #valid_vins should be written to a CSV that is uploaded to SalesForce CAN compatability check, file path
     #should be the same as the input file with _CAN appended
@@ -322,13 +309,13 @@ st.markdown('''This application checks customer VINs with the [National Highway 
 
 **Input Document Requirements**
 
-- The uploaded document containing the VINs must follow the standard [Michelin Connected Fleet Deployment Template.](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EeVf3pMJk4RMoqM5R17La4UBkXCvYKbbhiTalXbr-RIU9g?e=gOMlOh) This application cannot decipher different document formats. If an error is indicated with a file you upload, please check the uploaded document follows the formatting guidelines.
+- The uploaded document containing the VINs must follow the standard [Michelin Connected Fleet Deployment Template.](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EeVf3pMJk4RMoqM5R17La4UBkXCvYKbbhiTalXbr-RIU9g?e=vxNr7V) This application cannot decipher different document formats. If an error is indicated with a file you upload, please check the uploaded document follows the formatting guidelines.
 - Make sure the input document is not open on your computer. If the input document is open, a permission error will occur.
 - The VIN column must include the VINs the user wants to query. This is the only field necessary to confirm the existence/accuracy of the VINs.
 - The output documents will lack account information regarding the vehicle make, model, year, and fuel type if these input document columns are empty. 
 - If you are interested in retrieving additional vehicle information from VINs alone please use the [Automated VIN Data Application](https://vindata.streamlit.app/).
 
-***Example Input Document:*** [***VIN Example***](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EQiKjKdXBXpFhLNWXL4IQc8BT4W1Y-J8EGZZ2ZegNpzkcA?e=VL1sLH)
+***Example Input Document:*** [***VIN Example***](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EQiKjKdXBXpFhLNWXL4IQc8BT4W1Y-J8EGZZ2ZegNpzkcA?e=9vA9mT)
 
 ***Note:*** If you are interested in checking the accuracy/existence of VINs recorded in a different format/document: download the MCF Deployment Template linked above, then copy and paste the VINs into the VIN column and upload this document for bulk processing.''')
 
@@ -348,7 +335,7 @@ st.markdown('''**Output File 2: Processed VINs**
 - A manual check is necessary if the VIN was not written to the CAN compatibility file as a valid VIN and the VIN does not relate to a trailer or lift (could be a relevant vehicle). 
 - This file will have the same name as the original document followed by _processed. This file also includes VRN, Year, Make, Model, VIN and Fuel Type information from the original document. 
 
-***Example Processed Output Document:*** [***VIN Example_processed***](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EbmzK5YEc-FHjOp2Vt2pkygBEa97ga9S3c6o7Md6HKJXDQ?e=o5S2pP)
+***Example Processed Output Document:*** [***VIN Example_processed***](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EbmzK5YEc-FHjOp2Vt2pkygBEa97ga9S3c6o7Md6HKJXDQ?e=3uQNHe)
 
 If you are encountering issues with this application please contact the Service Excellence Team: MCFNAServiceExcellenceTeam@MichelinGroup.onmicrosoft.com
 ''')
