@@ -11,6 +11,60 @@ from io import BytesIO
 import json
 
 @st.cache_data
+
+def grouped_vehicles(dataframe):
+    for column in dataframe.columns:
+        dataframe[column] = ['' if value is None else value for value in dataframe[column]]
+    raw_vehicles = dataframe.apply(lambda row: row['NHTSA MAKE'] + ' ' + row['NHTSA MODEL'] if row['VEHICLE TYPE'] not in ['LIFT', 'TRAILER', 'UNKNOWN'] and row['NHTSA MAKE'] != '' and row['NHTSA MODEL'] != '' else 'TRAILER' if row['VEHICLE TYPE'] == 'TRAILER' else 'LIFT' if row['VEHICLE TYPE'] == 'LIFT' else 'UNCONFIRMED', axis=1).values.tolist()
+    
+    distinct_vehicles = list(set(raw_vehicles))
+    
+    counts = [raw_vehicles.count(item) for item in distinct_vehicles]
+    
+    vehicles = {k: v for k, v in zip(distinct_vehicles, counts)}
+    
+    add_unknown_info = dataframe.apply(lambda row: 'VEHICLE ' + '\n' + 'VIN: ' + row['VIN'] + '\n' + 'MAKE/MODEL: ' + row['MAKE'] + ' ' + row['MODEL'] if raw_vehicles[row.name] == 'UNCONFIRMED' else '', axis=1).tolist()
+    
+    add_unknown_info = [value.splitlines() for value in add_unknown_info if value != '']
+    
+    known_vehicles = []
+    
+    bulk_vehicles = []
+    
+    
+    for key, value in vehicles.items():
+        if key not in {'LIFT', 'TRAILER','UNCONFIRMED'}:
+            known_vehicles.append(f'{key}: {value} \n')
+        else:
+            bulk_vehicles.append(f'{key}: {value}\n')
+    
+    #phrase = 'VEHICLE TYPES:\n'
+    known_output = ''.join(sorted(known_vehicles))
+    known_output += ''.join(sorted(bulk_vehicles))
+    #known_output = phrase + known_output
+    
+    unknown_output = ''
+    
+    if add_unknown_info != []:
+        
+        length = 0
+    
+        for i, values in enumerate(add_unknown_info, start = 1):
+            values[0] += str(i)
+            if len(values[1]) > 27:
+                values[1].ljust(27)
+                values[1] += '...'
+            if len(values[1]) > length:
+                length = len(values[1])
+        #phrase = '\nUNCONFIRMED VEHICLE INFORMATION:\n'
+        unknown_output = '\n'.join(f'{values[0]} INFO:    {values[1].ljust(length)}    {values[2]}' for values in add_unknown_info)
+        #unknown_output = phrase + unknown_output
+    #output = known_output + unknown_output
+        
+    
+    return known_output, unknown_output
+    
+
 def confirm_vin(file_path):
     #some excel files have more than 1 sheet, we handle excel files with more than 1 sheet by telling the 
     #code to read the sheet named 'Vehicle & Asset List' as this is the standard naming convention
@@ -196,7 +250,8 @@ def confirm_vin(file_path):
                     results['VEHICLE TYPE'][ind] ='TRAILER'
                 elif 'lift' in vin_data['MODEL'][ind].lower():
                     results['VEHICLE TYPE'][ind] = 'LIFT'
-                elif results['VEHICLE TYPE'][ind] == 'Error':
+                else:
+                #elif results['VEHICLE TYPE'][ind] == 'Error':
                     results['VEHICLE TYPE'][ind] = 'UNKNOWN'
 
     #create results column indicating that somone needs to manually check a vehicle's VIN info using check_list
@@ -237,25 +292,61 @@ def confirm_vin(file_path):
             #adjust 'ERROR CODE' column to be the width of the title
             if worksheet.cell(row=1, column=idx + 1).value == 'ERROR CODE':
                 worksheet.column_dimensions[chr(65 + idx)].width = 12
-    #save and return the processed excel and can csv file paths to export
-    return processed_file_path, CAN_file_path
+                
+    known_vehicles, unknown_vehicles = grouped_vehicles(results)
+    
+    #save and return number of distinct vehicles, the processed excel and can csv file paths to export
+    return known_vehicles, unknown_vehicles, processed_file_path, CAN_file_path
 
-#set the text font as open sans to adhere to Michelin branding guidelines
-st.markdown("""
+custom_css = """
 <style>
-@import url('https://fonts.googleapis.com/css?family=Your+Font+Name');
-body {
-    font-family: 'Your Font Name', open-sans;
-}
-</style>
-""", unsafe_allow_html=True)
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
+    body {
+        font-family: 'Arial', open-sans;
+    }
+
+    .custom-markdown {
+        font-size: 16px;
+        line-height: 1.5;
+        max-width: 800px;
+        width: 100%;
+    }
+    
+    .custom-text-area {
+        font-family: 'Arial', open-sans;
+        font-size: 16px;
+        line-height: 1.5;
+        padding: 10px;
+        width: 100%;
+        box-sizing: border-box;
+        white-space: pre-wrap;
+    }
+    
+    .larger-font {
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .largest-font {
+        font-size: 22px;
+        font-weight: bold;
+    }
+    .title {
+            font-family: 'Arial', open-sans;
+            font-size: 36px;
+            font-weight: bold;
+        }
+    </style>
+"""
+
+st.markdown(custom_css, unsafe_allow_html=True)
+
 
 #add the Michelin banner to the top of the application, if the image link breaks you can correct this by copying and
 #pasting an alternative image url in the ()
 st.image("https://www.tdtyres.com/wp-content/uploads/2018/12/kisspng-car-michelin-man-tire-logo-michelin-logo-5b4c286206fa03.5353854915317177300286.png")
 
 #set the application title to 'Vin Decoder'
-st.title("VIN Decoder")
+st.markdown('<div class="custom-text-area title">{}</div>'.format('VIN Decoder'), unsafe_allow_html=True)
 
 #create a drag and drop box for file uploading, indicate that the file must be a CSV or Excel file
 uploaded_file = st.file_uploader("Choose an Excel or CSV file", type=["xls", "xlsx", "csv"])
@@ -275,7 +366,7 @@ if uploaded_file is not None:
         with open(input_file_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
         #call confirm vin to process the input file, save the returned file paths to export to the user
-        processed_file_path, can_file_path = confirm_vin(input_file_path)
+        known_vehicles, unknown_vehicles, processed_file_path, can_file_path = confirm_vin(input_file_path)
         #indicate to the user the processed excel file status
         st.session_state["processed_file_path"] = processed_file_path
         #indicate to the user the CAN csv file status
@@ -303,13 +394,26 @@ if st.session_state["processed_file_path"] and st.session_state["can_file_path"]
         file_name=os.path.basename(st.session_state["can_file_path"]),
         mime='text/csv'
     )
+    #st.markdown(custom_css, unsafe_allow_html=True)
+    #box_height = (fleet_summary.count('\n') + 1) * 20
+    
+    
+    
+    st.markdown('<div class="custom-text-area largest-font">{}</div>'.format('Fleet Summary'), unsafe_allow_html=True)
+    st.markdown('<div class="custom-text-area larger-font">{}</div>'.format('Vehicle Types'), unsafe_allow_html=True)
+    st.markdown('<div class="custom-text-area">{}</div>'.format(known_vehicles), unsafe_allow_html=True)
+    st.markdown('<div class="custom-text-area larger-font">{}</div>'.format('Unconfirmed Vehicles'), unsafe_allow_html=True)
+    st.markdown('<div class="custom-text-area">{}</div>'.format(unknown_vehicles), unsafe_allow_html=True)
 
 #document how to use the VIN decoder application to the user
-st.markdown('''This application checks customer VINs with the [National Highway Traffic Safety Administration API](https://vpic.nhtsa.dot.gov/api/) to confirm VIN accuracy. The API helps ensure the VINs are accurate and relate to relevant vehicles for the CAN compatibility check on Salesforce. This application can handle large volumes of VINs but greater numbers of uploaded VINs will slow down processing time. Processing 2200 VINs takes roughly 25 minutes. When uploading large numbers of VINs please be patient and do not close out the application while processing.
+st.markdown('<div class="custom-text-area largest-font">{}</div>'.format('User Guide'), unsafe_allow_html=True)
 
-**Input Document Requirements**
+st.markdown('''This application checks customer VINs with the [National Highway Traffic Safety Administration API](https://vpic.nhtsa.dot.gov/api/) to confirm VIN accuracy. The API helps ensure the VINs are accurate and relate to relevant vehicles for the CAN compatibility check on Salesforce. This application can handle large volumes of VINs but greater numbers of uploaded VINs will slow down processing time. Processing 2200 VINs takes roughly 25 minutes. When uploading large numbers of VINs please be patient and do not close out the application while processing.''')
 
-- The uploaded document containing the VINs must follow the standard [Michelin Connected Fleet Deployment Template.](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EeVf3pMJk4RMoqM5R17La4UBkXCvYKbbhiTalXbr-RIU9g?e=vxNr7V) This application cannot decipher different document formats. If an error is indicated with a file you upload, please check the uploaded document follows the formatting guidelines.
+st.markdown('<div class="custom-text-area larger-font">{}</div>'.format('Input Document Requirements'), unsafe_allow_html=True)
+            
+    
+st.markdown('''- The uploaded document containing the VINs must follow the standard [Michelin Connected Fleet Deployment Template.](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EeVf3pMJk4RMoqM5R17La4UBkXCvYKbbhiTalXbr-RIU9g?e=vxNr7V) This application cannot decipher different document formats. If an error is indicated with a file you upload, please check the uploaded document follows the formatting guidelines.
 - Make sure the input document is not open on your computer. If the input document is open, a permission error will occur.
 - The VIN column must include the VINs the user wants to query. This is the only field necessary to confirm the existence/accuracy of the VINs.
 - The output documents will lack account information regarding the vehicle make, model, year, and fuel type if these input document columns are empty. 
@@ -319,16 +423,26 @@ st.markdown('''This application checks customer VINs with the [National Highway 
 
 ***Note:*** If you are interested in checking the accuracy/existence of VINs recorded in a different format/document: download the MCF Deployment Template linked above, then copy and paste the VINs into the VIN column and upload this document for bulk processing.''')
 
-st.markdown('''**Output File 1: CAN Compatibility Check**
-- After comparison with the NHTSA VIN database, accurate and relevant VINs are written to a CSV file following the standard format for the CAN compatibility check. 
+st.markdown('<div class="custom-text-area larger-font">{}</div>'.format('Fleet Summary Output'), unsafe_allow_html=True)
+st.markdown('''- Provides information on vehicle type and number of vehicles.
+- Used for customer fleet information confirmation.
+- Unconfirmed vehicles are vehicles whose VINs do not exist within the NHTSA database indicating a VIN error and are not categorized as a trailer or lift.
+
+***Note:*** If a VIN does relate to a trailer or lift but is listed as unconfirmed update the Model column of the VIN to include the word 'trailer' or 'lift' on the MCF Deployment Template. 
+''')
+            
+st.markdown('<div class="custom-text-area larger-font">{}</div>'.format('Output File 1: CAN Compatibility Check'), unsafe_allow_html=True)
+
+st.markdown('''- After comparison with the NHTSA VIN database, accurate and relevant VINs are written to a CSV file following the standard format for the CAN compatibility check. 
 - VINs relating to trailers and lifts are considered irrelevant to the CAN compatibility check and are excluded from this document. 
 - This CSV will have the same name as the original document followed by _CAN. This file includes VRN, Year, Make, Model, VIN, and Fuel Type information from the original input file.
 
 ***Example CAN Output Document:*** [***VIN Example_CAN***](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EacrWkHBryJNrWVnA9FilCQBwmIIHnSx5wraTDd4Whnm1g?e=RsNt07)
 ''')
 
-st.markdown('''**Output File 2: Processed VINs**
-- This secondary output file includes information on all VINs present in the original uploaded document, including VINs excluded from the CAN Compatibility Check document. 
+st.markdown('<div class="custom-text-area larger-font">{}</div>'.format('Output File 2: Processed VINs'), unsafe_allow_html=True)
+
+st.markdown('''- This secondary output file includes information on all VINs present in the original uploaded document, including VINs excluded from the CAN Compatibility Check document. 
 - The application processes the original VIN document and determines the VIN's vehicle type, indicates whether a manual employee check for a VIN is necessary and provides error code information pertaining to the VIN. 
 - An error code of 0 indicates there was no issue with the VIN. 
 - A manual check is indicated as unnecessary if the VIN was considered valid and written to the CAN compatibility document or the vehicle type is a trailer or lift (irrelevant vehicle). 
