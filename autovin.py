@@ -299,42 +299,46 @@ def confirm_vin(file_path):
     return known_vehicles, unknown_vehicles, processed_file_path, CAN_file_path
 
 custom_css = """
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
-    body {
-        font-family: 'Arial', open-sans;
-    }
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
 
-    .custom-markdown {
-        font-size: 16px;
-        line-height: 1.5;
-        max-width: 800px;
-        width: 100%;
-    }
-    
-    .custom-text-area {
-        font-family: 'Arial', open-sans;
-        font-size: 16px;
-        line-height: 1.5;
-        padding: 10px;
-        width: 100%;
-        box-sizing: border-box;
-        white-space: pre-wrap;
-    }
-    
-    .larger-font {
-        font-size: 18px;
-        font-weight: bold;
-    }
-    .largest-font {
-        font-size: 22px;
-        font-weight: bold;
-    }
-    .title {
-            font-family: 'Arial', open-sans;
+        body {
+            font-family: 'Arial', 'Open Sans', sans-serif;
+        }
+
+        .custom-markdown {
+            font-size: 16px;
+            line-height: 1.5;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .custom-text-area {
+            font-family: 'Arial', 'Open Sans', sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            white-space: pre-wrap;
+        }
+        
+        .larger-font {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .largest-font {
+            font-size: 22px;
+            font-weight: bold;
+        }
+        
+        .title {
+            font-family: 'Arial', 'Open Sans', sans-serif;
             font-size: 36px;
             font-weight: bold;
         }
+        
     </style>
 """
 
