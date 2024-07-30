@@ -133,10 +133,30 @@ def confirm_vin(file_path):
     
     #iterate through each VIN in list of VINs
     for value in values:
+        #create variable indicating if a VIN has been corrected
+        corrected = 'NO'
         #ensure the type of the VIN is string
         value = str(value)
+        #handle common data entry errors 
         #remove spaces from VIN, accounts for common data entry error
-        value = value.replace(" ", "")
+        if ' ' in value:
+            value = value.replace(" ", "")
+            corrected = 'YES: Spaces Removed'
+        #replace Q with 0
+        if 'q' in value.lower():
+            value = value.replace('Q','0')
+            value = value.replace('q', '0')
+            corrected = "YES: Replaced 'Q' with '0'"
+        #replace O with 0
+        if 'o' in value.lower() and 'unknown' not in value.lower():
+            value = value.replace('O', '0')
+            value = value.replace('o', '0')
+            corrected = "YES: Replaced 'O' with '0'"
+        #replace I with 1
+        if 'i' in value.lower():
+            value = value.replace('I', '1')
+            value = value.replace('i', '1')
+            corrected = "YES: Replaced 'I' with 1"
         #create VIN specific link to access details for API query
         url = base_url + value + '?format=json'
         #pulls details from url, bypasses certification verification error created by Michelin firewalls
@@ -152,6 +172,7 @@ def confirm_vin(file_path):
 
                 'VRN': vin_data['VRN'][ind],
                 'VIN': value,
+                'VIN CORRECTED': corrected,
                 'NHTSA YEAR': decoded_values.get('Model Year', 'N/A'),
                 'NHTSA MAKE': decoded_values.get('Make', 'N/A'),
                 'NHTSA MODEL': decoded_values.get('Model', 'N/A'),
@@ -171,6 +192,7 @@ def confirm_vin(file_path):
             results.append({
                 'VRN': vin_data['VRN'][ind],
                 'VIN': value,
+                'VIN CORRECTED': corrected,
                 'NHTSA YEAR': 'Error',
                 'NHTSA MAKE': 'Error',
                 'NHTSA MODEL': 'Error',
@@ -199,7 +221,7 @@ def confirm_vin(file_path):
     
     #remove VEHICLE TYPE and ERROR CODE column from valid_vins dataframe to ensure in correct format for 
     #CAN compatability
-    valid_vins.drop(['NHTSA YEAR','NHTSA MAKE', 'NHTSA MODEL', 'VEHICLE TYPE', 'ERROR CODE'], axis = 1, inplace = True)
+    valid_vins.drop(['VIN CORRECTED', 'NHTSA YEAR','NHTSA MAKE', 'NHTSA MODEL', 'VEHICLE TYPE', 'ERROR CODE'], axis = 1, inplace = True)
     
     #remove duplicate VINs from CAN compatability check document
     valid_vins.drop_duplicates(subset=['VIN'],inplace= True)
@@ -222,7 +244,7 @@ def confirm_vin(file_path):
     ##iterate through results dataframe by index
     for ind in results.index:
         #check if the VIN is already in CAN dataframe and not a duplicate, if true no manual check
-        if results['VIN'][ind].replace(" ", "") in valid_vin_list and results['VIN'][ind] not in vins_checked:
+        if results['VIN'][ind] in valid_vin_list and results['VIN'][ind] not in vins_checked:
             check_list.append('NO')
         #if the vehicle is a trailer no manual checl
         elif results['VEHICLE TYPE'][ind] == 'TRAILER':
@@ -423,7 +445,7 @@ st.markdown('''- The uploaded document containing the VINs must follow the stand
 - The output documents will lack account information regarding the vehicle make, model, year, and fuel type if these input document columns are empty. 
 - If you are interested in retrieving additional vehicle information from VINs alone please use the [Automated VIN Data Application](https://vindata.streamlit.app/).
 
-***Example Input Document:*** [***VIN Example***](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EQiKjKdXBXpFhLNWXL4IQc8BT4W1Y-J8EGZZ2ZegNpzkcA?e=9vA9mT)
+***Example Input Document:*** [***VIN Example***](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EYifdfuMSAJAnSaoPxeselABySIDMB0nLNRKxhBfW1kHWQ?e=e3tOBv)
 
 ***Note:*** If you are interested in checking the accuracy/existence of VINs recorded in a different format/document: download the MCF Deployment Template linked above, then copy and paste the VINs into the VIN column and upload this document for bulk processing.''')
 
@@ -447,13 +469,14 @@ st.markdown('''- After comparison with the NHTSA VIN database, accurate and rele
 st.markdown('<div class="custom-text-area larger-font">{}</div>'.format('Output File 2: Processed VINs'), unsafe_allow_html=True)
 
 st.markdown('''- This secondary output file includes information on all VINs present in the original uploaded document, including VINs excluded from the CAN Compatibility Check document. 
-- The application processes the original VIN document and determines the VIN's vehicle type, indicates whether a manual employee check for a VIN is necessary and provides error code information pertaining to the VIN. 
+- The application processes the original VIN document and determines the VIN's vehicle type, reports if a VIN was corrected, indicates whether a manual employee check for a VIN is necessary and provides error code information pertaining to the VIN.
+- The 'VIN Corrected' column indicates if the VIN was corrected for common data entry errors. If the VIN did not need to be corrected for common data entry errors the 'VIN Corrected' column will say 'No.' If spaces were removed, O's and Q's were replaced with 0's or I's were replaced with 1's this will be indicated.
 - An error code of 0 indicates there was no issue with the VIN. 
 - A manual check is indicated as unnecessary if the VIN was considered valid and written to the CAN compatibility document or the vehicle type is a trailer or lift (irrelevant vehicle). 
 - A manual check is necessary if the VIN was not written to the CAN compatibility file as a valid VIN and the VIN does not relate to a trailer or lift (could be a relevant vehicle). 
 - This file will have the same name as the original document followed by _processed. This file also includes VRN, Year, Make, Model, VIN and Fuel Type information from the original document. 
 
-***Example Processed Output Document:*** [***VIN Example_processed***](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EbmzK5YEc-FHjOp2Vt2pkygBEa97ga9S3c6o7Md6HKJXDQ?e=3uQNHe)
+***Example Processed Output Document:*** [***VIN Example_processed***](https://michelingroup.sharepoint.com/:x:/s/DocumentLibrary/EfORSzVsdVlMkvHwFupC0EgBnunZu8xgBLEsGDB0oX2kvA?e=pWE7N3)
 
 If you are encountering issues with this application please contact the Service Excellence Team: MCFNAServiceExcellenceTeam@MichelinGroup.onmicrosoft.com
 ''')
