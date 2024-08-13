@@ -12,56 +12,80 @@ import json
 
 @st.cache_data
 
+#create a fucntion that will group vehicles by type for the fleet summary, this will be called later within the 'confirm_vin()' function
 def grouped_vehicles(dataframe):
+    #iterate through the columns of the data frame
     for column in dataframe.columns:
+        #remove none entries from the dataframe, replace None with empty string
         dataframe[column] = ['' if value is None else value for value in dataframe[column]]
+    
+    #iterate through the rows of the dataframe, create a list holding the NHTSA MAKE and NHTSA MODEL values returned from the NHTSA API, only include vehicles that are not lifts, trailers or unknown
+    #we also do not record vehicles that do not have make or model recorded, if the VIN relates to a trailer or lift, record TRAILER or LIFT, if the vehicle type is unknown the vehicle type is
+    #recorded as unconfirmed
     raw_vehicles = dataframe.apply(lambda row: row['NHTSA MAKE'] + ' ' + row['NHTSA MODEL'] if row['VEHICLE TYPE'] not in ['LIFT', 'TRAILER', 'UNKNOWN'] and row['NHTSA MAKE'] != '' and row['NHTSA MODEL'] != '' else 'TRAILER' if row['VEHICLE TYPE'] == 'TRAILER' else 'LIFT' if row['VEHICLE TYPE'] == 'LIFT' else 'UNCONFIRMED', axis=1).values.tolist()
     
+    #create a list of the distinct makes and models
     distinct_vehicles = list(set(raw_vehicles))
     
+    #count the number vehicles of a specific make and model
     counts = [raw_vehicles.count(item) for item in distinct_vehicles]
     
+    #create a dictionary of the make/models and their vehicle count
     vehicles = {k: v for k, v in zip(distinct_vehicles, counts)}
     
+    #record the vehicle, vin, make/model information of the invalid VINs as recorded by the account manager in the MCF deployment template
     add_unknown_info = dataframe.apply(lambda row: 'VEHICLE ' + '\n' + 'VIN: ' + row['VIN'] + '\n' + 'MAKE/MODEL: ' + row['MAKE'] + ' ' + row['MODEL'] if raw_vehicles[row.name] == 'UNCONFIRMED' else '', axis=1).tolist()
     
+    #add split lines in between unknown vehicles for formatting purposes
     add_unknown_info = [value.splitlines() for value in add_unknown_info if value != '']
     
+    #create a list to store the known vehicles
     known_vehicles = []
     
+    #create a list to store unconfirmed vehicles, trailers and lifts, this will ensure trailer, lift, and unconfirmed vehicles are added to the end of the fleet summary
     bulk_vehicles = []
     
-    
+    #add vehicles to the vehicle lists
     for key, value in vehicles.items():
+        #append the known_vehicles list with the dictinct vehicle makes/models and their vehicle count
         if key not in {'LIFT', 'TRAILER','UNCONFIRMED'}:
             known_vehicles.append(f'{key}: {value} \n')
+        #append the bulk_vehicles list with lift, trailer and unconfirmed vehicle types and their respective vehicle counts
         else:
             bulk_vehicles.append(f'{key}: {value}\n')
     
-    #phrase = 'VEHICLE TYPES:\n'
+    #sort the known vehicle list alphabetically and write it to known_output which is text that will later be output as the fleet summary
     known_output = ''.join(sorted(known_vehicles))
+    #add the sorted bulk_vehicles list to the known_output text
     known_output += ''.join(sorted(bulk_vehicles))
-    #known_output = phrase + known_output
     
+    #create empty unknown output text
     unknown_output = ''
     
+    #if there are any unconfirmed vehicles, add the related vehicle information to the unknown_output text
     if add_unknown_info != []:
         
+        #format the output so the spaces between the VINs and Vehicles are even and the output is legible
+        
+        #create a variable to store length of the largest VIN
         length = 0
-    
+        
+        #iterate through the unknown vehicle information
         for i, values in enumerate(add_unknown_info, start = 1):
+            #add the relevant number to the Vehicle string, ex. first vehicle will say Vehicle 1 in the unknown vehicle output
             values[0] += str(i)
+            #if any VIN is longer than 27 digits (which is a typo) cut the VIN to 27 digits and add '...' to indicate the VIN is cut off
             if len(values[1]) > 27:
                 values[1].ljust(27)
                 values[1] += '...'
+            #if the length of the VIN is longer than the current length, update length
             if len(values[1]) > length:
                 length = len(values[1])
-        #phrase = '\nUNCONFIRMED VEHICLE INFORMATION:\n'
-        unknown_output = '\n'.join(f'{values[0]} INFO:    {values[1].ljust(length)}    {values[2]}' for values in add_unknown_info)
-        #unknown_output = phrase + unknown_output
-    #output = known_output + unknown_output
         
+        #add the unknown input to the unknown output, adjusting the length of all the VINs to the length of the longest VIN to ensure spacing is consistent and output is formatted nicely
+        unknown_output = '\n'.join(f'{values[0]} INFO:    {values[1].ljust(length)}    {values[2]}' for values in add_unknown_info)
     
+    #return the known vehicle output and the unknown vehicle output for the fleet summary
     return known_output, unknown_output
     
 
